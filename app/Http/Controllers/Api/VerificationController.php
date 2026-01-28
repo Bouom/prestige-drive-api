@@ -2,31 +2,47 @@
 
 namespace App\Http\Controllers\Api;
 
-use Illuminate\Http\Request;
-use App\Http\Controllers\Controller;
+use App\Http\Requests\Auth\VerifyEmailRequest;
+use App\Http\Requests\Auth\ResendVerificationRequest;
+use App\Http\Requests\Auth\CheckVerificationStatusRequest;
+use App\Http\Resources\UserResource;
+use App\Http\Resources\VerificationStatusResource;
 use App\Mail\VerificationCodeMail;
 use App\Models\EmailVerificationCode;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Support\Str;
 
+/**
+ * @tags Email Verification
+ */
 class VerificationController extends BaseController
 {
-    protected $maxAttempts = 5;
-    protected $decayMinutes = 30;
+    /**
+     * @var int Maximum verification attempts allowed
+     */
+    protected int $maxAttempts = 5;
 
-    public function verify(Request $request)
+    /**
+     * @var int Decay time in minutes for rate limiting
+     */
+    protected int $decayMinutes = 30;
+
+    /**
+     * Verify email address.
+     *
+     * Verifies the user's email using the 6-digit code sent during registration.
+     * Rate limited to 5 attempts per 30 minutes.
+     *
+     * @unauthenticated
+     */
+    public function verify(VerifyEmailRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-            'code' => 'required|string',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return response()->json(['message' => 'User not found'], 404);
+            return $this->sendError('User not found.', [], 404);
         }
 
         // Rate limiting verification attempts
@@ -35,11 +51,11 @@ class VerificationController extends BaseController
         if (RateLimiter::tooManyAttempts($key, $this->maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
 
-            return response()->json([
-                'message' => 'Too many verification attempts. Please try again in ' .
-                    ceil($seconds / 60) . ' minutes.',
-                'retry_after' => $seconds
-            ], 429);
+            return $this->sendError(
+                'Too many verification attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                ['retry_after' => $seconds],
+                429
+            );
         }
 
         $verificationCode = EmailVerificationCode::where('user_id', $user->id)
@@ -52,11 +68,9 @@ class VerificationController extends BaseController
 
             $attemptsLeft = $this->maxAttempts - RateLimiter::attempts($key);
 
-            $message = !$verificationCode ? 'Invalid verification code' : 'Verification code has expired';
-            return $this->sendError([
-                'message' => $message,
-                'attempts_left' => $attemptsLeft
-            ], 400);
+            $message = !$verificationCode ? 'Invalid verification code.' : 'Verification code has expired.';
+            
+            return $this->sendError($message, ['attempts_left' => $attemptsLeft], 400);
         }
 
         // Reset failed attempts counter
@@ -67,41 +81,49 @@ class VerificationController extends BaseController
 
         $verificationCode->delete();
 
-        return $this->sendResponse([], 'Email verified successfully');
+        return $this->sendResponse(
+            new UserResource($user->load('roles')),
+            'Email verified successfully.'
+        );
     }
 
-    public function resend(Request $request)
+    /**
+     * Resend verification code.
+     *
+     * Sends a new verification code to the user's email address.
+     * Rate limited to 3 requests per hour.
+     *
+     * @unauthenticated
+     */
+    public function resend(ResendVerificationRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email',
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
-            return $this->sendError([], 'User not found', 404);
+            return $this->sendError('User not found.', [], 404);
         }
 
         if ($user->email_verified_at) {
-            return $this->sendError([], 'Email already verified', 400);
+            return $this->sendError('Email already verified.', [], 400);
         }
 
         // Rate limit code resend requests
         $key = 'verification-resend:' . $user->id;
 
-        if (RateLimiter::tooManyAttempts($key, 3)) { // Limit to 3 requests
+        if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
 
-            return response()->json([
-                'message' => 'Too many resend attempts. Please try again in ' .
-                    ceil($seconds / 60) . ' minutes.',
-                'retry_after' => $seconds
-            ], 429);
+            return $this->sendError(
+                'Too many resend attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                ['retry_after' => $seconds],
+                429
+            );
         }
 
         // Increment the resend counter with a 60-minute decay
         RateLimiter::hit($key, 60 * 60);
 
+        // Delete old codes
         EmailVerificationCode::where('user_id', $user->id)->delete();
 
         $code = mt_rand(100000, 999999);
@@ -114,15 +136,19 @@ class VerificationController extends BaseController
 
         Mail::to($user->email)->send(new VerificationCodeMail($code));
 
-        return $this->sendResponse([], 'Verification code resent');
+        return $this->sendResponse([], 'Verification code resent.');
     }
 
-    public function checkVerificationStatus(Request $request)
+    /**
+     * Check verification status.
+     *
+     * Checks if the user's email is verified. If not verified,
+     * sends a new verification code automatically.
+     *
+     * @unauthenticated
+     */
+    public function checkVerificationStatus(CheckVerificationStatusRequest $request): JsonResponse
     {
-        $request->validate([
-            'email' => 'required|email'
-        ]);
-
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
@@ -130,7 +156,10 @@ class VerificationController extends BaseController
         }
 
         if ($user->hasVerifiedEmail()) {
-            return $this->sendResponse(['verified' => true], 'Email already verified.');
+            return $this->sendResponse(
+                new VerificationStatusResource(['verified' => true, 'email' => $user->email]),
+                'Email already verified.'
+            );
         }
 
         // Delete old codes
@@ -138,6 +167,7 @@ class VerificationController extends BaseController
 
         // Create new code
         $code = mt_rand(100000, 999999);
+        
         EmailVerificationCode::create([
             'user_id' => $user->id,
             'code' => $code,
@@ -146,9 +176,9 @@ class VerificationController extends BaseController
 
         Mail::to($user->email)->send(new VerificationCodeMail($code));
 
-        return $this->sendResponse([
-            'verified' => false,
-            'email' => $user->email
-        ], 'Verification code sent.');
+        return $this->sendResponse(
+            new VerificationStatusResource(['verified' => false, 'email' => $user->email]),
+            'Verification code sent.'
+        );
     }
 }

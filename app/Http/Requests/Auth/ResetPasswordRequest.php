@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Validation\Rules\Password;
 
-class ForgotPasswordRequest extends FormRequest
+class ResetPasswordRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,7 +23,16 @@ class ForgotPasswordRequest extends FormRequest
     public function rules(): array
     {
         return [
+            'token' => ['required', 'string'],
             'email' => ['required', 'string', 'email', 'exists:users,email'],
+            'password' => [
+                'required',
+                'string',
+                'confirmed',
+                Password::min(8)
+                    ->mixedCase()
+                    ->numbers(),
+            ],
         ];
     }
 
@@ -34,9 +44,12 @@ class ForgotPasswordRequest extends FormRequest
     public function messages(): array
     {
         return [
+            'token.required' => 'Le token de réinitialisation est obligatoire.',
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'L\'adresse email n\'est pas valide.',
             'email.exists' => 'Aucun compte n\'est associé à cette adresse email.',
+            'password.required' => 'Le nouveau mot de passe est obligatoire.',
+            'password.confirmed' => 'La confirmation du mot de passe ne correspond pas.',
         ];
     }
 }

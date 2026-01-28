@@ -14,15 +14,17 @@ return new class extends Migration
     public function up(): void
     {
         DB::table('oauth_clients')->insert([
+            'id' => (string) Str::uuid(), // 🔑 OBLIGATOIRE
             'name' => 'Social Grant Client',
-            'secret' => Str::random(40),
+            'secret' => hash('sha256', Str::random(40)),
+            'provider' => 'users', // 🔑 TRÈS IMPORTANT
             'redirect' => config('app.url'),
             'personal_access_client' => false,
             'password_client' => false,
             'revoked' => false,
             'grants' => json_encode(['social', 'refresh_token']),
             'created_at' => now(),
-            'updated_at' => now()
+            'updated_at' => now(),
         ]);
     }
 

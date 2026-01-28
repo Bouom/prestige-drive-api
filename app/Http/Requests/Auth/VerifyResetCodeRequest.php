@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Http\Requests;
+namespace App\Http\Requests\Auth;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class ForgotPasswordRequest extends FormRequest
+class VerifyResetCodeRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -23,6 +23,7 @@ class ForgotPasswordRequest extends FormRequest
     {
         return [
             'email' => ['required', 'string', 'email', 'exists:users,email'],
+            'code' => ['required', 'string', 'digits:6'],
         ];
     }
 
@@ -37,6 +38,8 @@ class ForgotPasswordRequest extends FormRequest
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'L\'adresse email n\'est pas valide.',
             'email.exists' => 'Aucun compte n\'est associé à cette adresse email.',
+            'code.required' => 'Le code de vérification est obligatoire.',
+            'code.digits' => 'Le code doit contenir exactement :digits chiffres.',
         ];
     }
 }

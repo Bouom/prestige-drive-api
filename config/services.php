@@ -35,10 +35,30 @@ return [
         ],
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Passport OAuth Clients
+    |--------------------------------------------------------------------------
+    */
+    'passport' => [
+        'password_client_id' => env('PASSPORT_PASSWORD_CLIENT_ID'),
+        'password_client_secret' => env('PASSPORT_PASSWORD_CLIENT_SECRET'),
+        'social_client_id' => env('PASSPORT_SOCIAL_CLIENT_ID'),
+        'social_client_secret' => env('PASSPORT_SOCIAL_CLIENT_SECRET'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google OAuth
+    |--------------------------------------------------------------------------
+    */
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI'),
+        'redirect_uri' => env('GOOGLE_REDIRECT_URI'),
+        'auth_url' => env('GOOGLE_AUTH_URL', 'https://accounts.google.com/o/oauth2/v2/auth'),
+        'app_scheme' => env('APP_SCHEME'),
+        'client_base_url' => env('CLIENT_BASE_URL'),
     ],
 
 ];
