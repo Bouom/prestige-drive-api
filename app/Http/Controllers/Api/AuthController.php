@@ -11,6 +11,8 @@ use App\Http\Requests\Auth\DeleteAccountRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\AuthTokenResource;
 use App\Mail\VerificationCodeMail;
+use App\Models\Company;
+use App\Models\Driver;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\EmailVerificationCode;
@@ -39,24 +41,105 @@ class AuthController extends BaseController
      */
     public function register(RegisterRequest $request): JsonResponse
     {
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+        $roleInput = strtolower((string) $request->input('role'));
+        $roleMap = [
+            'client' => ['name' => 'customer', 'id' => 1],
+            'customer' => ['name' => 'customer', 'id' => 1],
+            'societe' => ['name' => 'company', 'id' => 2],
+            'société' => ['name' => 'company', 'id' => 2],
+            'company' => ['name' => 'company', 'id' => 2],
+            'chauffeur' => ['name' => 'driver', 'id' => 3],
+            'driver' => ['name' => 'driver', 'id' => 3],
+        ];
 
-        $code = mt_rand(100000, 999999);
+        $roleData = $roleMap[$roleInput] ?? ['name' => 'customer', 'id' => 1];
+        $roleName = $roleData['name'];
+        $roleId = $roleData['id'];
 
-        EmailVerificationCode::create([
-            'user_id' => $user->id,
-            'code' => $code,
-            'expires_at' => now()->addHours(2),
-        ]);
+        $user = null;
 
-        Mail::to($user->email)->send(new VerificationCodeMail($code));
+        DB::transaction(function () use ($request, $roleName, $roleId, &$user) {
+            // On force l'id du rôle selon la convention métier
+            $role = Role::firstOrCreate(['id' => $roleId, 'name' => $roleName]);
+            $user = User::create([
+                'name' => $request->name,
+                'email' => $request->email,
+                'password' => Hash::make($request->password),
+                'role_id' => $roleId,
+            ]);
 
-        $role = Role::firstOrCreate(['name' => 'customer']);
-        $user->roles()->attach($role);
+            $user->roles()->attach($roleId);
+
+            // Enregistrement conditionnel selon le rôle
+            if ($roleName === 'company') {
+                $companyFiles = [];
+                if ($request->hasFile('kbis')) {
+                    $companyFiles['kbis'] = $request->file('kbis')->store('documents/kbis', 'public');
+                }
+                if ($request->hasFile('rib')) {
+                    $companyFiles['rib'] = $request->file('rib')->store('documents/rib', 'public');
+                }
+                if ($request->hasFile('assurance_rc_pro')) {
+                    $companyFiles['assurance_rc_pro'] = $request->file('assurance_rc_pro')->store('documents/assurance_rc_pro', 'public');
+                }
+                Company::create(array_merge([
+                    'user_id' => $user->id,
+                    'role_id' => $roleId,
+                    'company_name' => $request->input('company_name') ?? $request->name,
+                    'company_address' => $request->input('company_address'),
+                    'manager_name' => $request->input('manager_name'),
+                    'company_zip_code' => $request->input('company_zip_code'),
+                    'company_city' => $request->input('company_city'),
+                    'company_country' => $request->input('company_country'),
+                    'driver_count' => $request->input('driver_count'),
+                    'company_iban' => $request->input('company_iban'),
+                    'bic_code' => $request->input('bic_code'),
+                ], $companyFiles));
+            } else if ($roleName === 'driver') {
+                $driverFiles = [];
+                if ($request->hasFile('drivingLicense')) {
+                    $driverFiles['driving_license'] = $request->file('drivingLicense')->store('documents/driving_license', 'public');
+                }
+                if ($request->hasFile('idCard')) {
+                    $driverFiles['id_card'] = $request->file('idCard')->store('documents/id_card', 'public');
+                }
+                if ($request->hasFile('insurance')) {
+                    $driverFiles['insurance'] = $request->file('insurance')->store('documents/insurance', 'public');
+                }
+                if ($request->hasFile('vtcCard')) {
+                    $driverFiles['vtc_card'] = $request->file('vtcCard')->store('documents/vtc_card', 'public');
+                }
+                Driver::create(array_merge([
+                    'user_id' => $user->id,
+                    'role_id' => $roleId,
+                    'is_available' => $request->input('is_available', true),
+                    'license_type' => $request->input('license_type'),
+                    'experience' => $request->input('experience'),
+                    'insurance_issue_date' => $request->input('insurance_issue_date'),
+                    'insurance_expiry_date' => $request->input('insurance_expiry_date'),
+                    'id_issue_date' => $request->input('id_issue_date'),
+                    'id_expiry_date' => $request->input('id_expiry_date'),
+                    'license_issue_date' => $request->input('license_issue_date'),
+                    'license_expiry_date' => $request->input('license_expiry_date'),
+                    'pro_card_issue_date' => $request->input('pro_card_issue_date'),
+                    'pro_card_expiry_date' => $request->input('pro_card_expiry_date'),
+                ], $driverFiles));
+            }
+
+            $code = mt_rand(100000, 999999);
+
+            EmailVerificationCode::create([
+                'user_id' => $user->id,
+                'code' => $code,
+                'expires_at' => now()->addHours(2),
+            ]);
+
+            Mail::to($user->email)->send(new VerificationCodeMail($code));
+        });
+
+        if (!$user) {
+            return $this->sendError('Failed to create user.', [], 500);
+        }
 
         return $this->sendResponse(
             new UserResource($user->load('roles')),
@@ -90,14 +173,21 @@ class AuthController extends BaseController
 
         $user = User::where('email', $request->email)->first();
 
-        if (!$user || !Hash::check($request->password, $user->password)) {
+        if (!$user) {
             RateLimiter::hit($key, 60);
+            info('Login error: Utilisateur introuvable avec cet email.', ['email' => $request->email]);
+            return $this->sendError('Utilisateur introuvable avec cet email.', ['email' => $request->email], 401);
+        }
 
-            return $this->sendError('Invalid credentials.', [], 401);
+        if (!Hash::check($request->password, $user->password)) {
+            RateLimiter::hit($key, 60);
+            info('Login error: Mot de passe incorrect.', ['email' => $request->email]);
+            return $this->sendError('Mot de passe incorrect.', ['email' => $request->email], 401);
         }
 
         if (!$user->hasVerifiedEmail()) {
-            return $this->sendError('Email not verified.', [], 403);
+            info('Login error: Email non vérifié.', ['email_verified_at' => $user->email_verified_at, 'email' => $user->email]);
+            return $this->sendError('Email non vérifié.', ['email_verified_at' => $user->email_verified_at], 403);
         }
 
         // Clear rate limiter on successful login
