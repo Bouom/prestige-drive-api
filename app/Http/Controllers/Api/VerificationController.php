@@ -2,9 +2,9 @@
 
 namespace App\Http\Controllers\Api;
 
-use App\Http\Requests\Auth\VerifyEmailRequest;
-use App\Http\Requests\Auth\ResendVerificationRequest;
 use App\Http\Requests\Auth\CheckVerificationStatusRequest;
+use App\Http\Requests\Auth\ResendVerificationRequest;
+use App\Http\Requests\Auth\VerifyEmailRequest;
 use App\Http\Resources\UserResource;
 use App\Http\Resources\VerificationStatusResource;
 use App\Mail\VerificationCodeMail;
@@ -41,18 +41,18 @@ class VerificationController extends BaseController
     {
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
-            return $this->sendError('User not found.', [], 404);
+        if (! $user) {
+            return $this->sendError('Utilisateur non trouvé.', [], 404);
         }
 
         // Rate limiting verification attempts
-        $key = 'verification:' . $user->id;
+        $key = 'verification:'.$user->id;
 
         if (RateLimiter::tooManyAttempts($key, $this->maxAttempts)) {
             $seconds = RateLimiter::availableIn($key);
 
             return $this->sendError(
-                'Too many verification attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                'Trop de tentatives de vérification. Veuillez réessayer dans '.ceil($seconds / 60).' minutes.',
                 ['retry_after' => $seconds],
                 429
             );
@@ -62,14 +62,14 @@ class VerificationController extends BaseController
             ->where('code', $request->code)
             ->first();
 
-        if (!$verificationCode || !$verificationCode->isValid()) {
+        if (! $verificationCode || ! $verificationCode->isValid()) {
             // Increment failed attempts counter
             RateLimiter::hit($key, $this->decayMinutes * 60);
 
             $attemptsLeft = $this->maxAttempts - RateLimiter::attempts($key);
 
-            $message = !$verificationCode ? 'Invalid verification code.' : 'Verification code has expired.';
-            
+            $message = ! $verificationCode ? 'Code de vérification invalide.' : 'Le code de vérification a expiré.';
+
             return $this->sendError($message, ['attempts_left' => $attemptsLeft], 400);
         }
 
@@ -82,8 +82,8 @@ class VerificationController extends BaseController
         $verificationCode->delete();
 
         return $this->sendResponse(
-            new UserResource($user->load('roles')),
-            'Email verified successfully.'
+            new UserResource($user->load('userType')),
+            'Adresse e-mail vérifiée avec succès.'
         );
     }
 
@@ -99,22 +99,22 @@ class VerificationController extends BaseController
     {
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
-            return $this->sendError('User not found.', [], 404);
+        if (! $user) {
+            return $this->sendError('Utilisateur non trouvé.', [], 404);
         }
 
         if ($user->email_verified_at) {
-            return $this->sendError('Email already verified.', [], 400);
+            return $this->sendError('Adresse e-mail déjà vérifiée.', [], 400);
         }
 
         // Rate limit code resend requests
-        $key = 'verification-resend:' . $user->id;
+        $key = 'verification-resend:'.$user->id;
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
 
             return $this->sendError(
-                'Too many resend attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                'Trop de tentatives de renvoi. Veuillez réessayer dans '.ceil($seconds / 60).' minutes.',
                 ['retry_after' => $seconds],
                 429
             );
@@ -136,7 +136,7 @@ class VerificationController extends BaseController
 
         Mail::to($user->email)->send(new VerificationCodeMail($code));
 
-        return $this->sendResponse([], 'Verification code resent.');
+        return $this->sendResponse([], 'Code de vérification renvoyé.');
     }
 
     /**
@@ -151,14 +151,14 @@ class VerificationController extends BaseController
     {
         $user = User::where('email', $request->email)->first();
 
-        if (!$user) {
-            return $this->sendError('Email not found.', [], 404);
+        if (! $user) {
+            return $this->sendError('Adresse e-mail non trouvée.', [], 404);
         }
 
         if ($user->hasVerifiedEmail()) {
             return $this->sendResponse(
                 new VerificationStatusResource(['verified' => true, 'email' => $user->email]),
-                'Email already verified.'
+                'Adresse e-mail déjà vérifiée.'
             );
         }
 
@@ -167,7 +167,7 @@ class VerificationController extends BaseController
 
         // Create new code
         $code = mt_rand(100000, 999999);
-        
+
         EmailVerificationCode::create([
             'user_id' => $user->id,
             'code' => $code,
@@ -178,7 +178,7 @@ class VerificationController extends BaseController
 
         return $this->sendResponse(
             new VerificationStatusResource(['verified' => false, 'email' => $user->email]),
-            'Verification code sent.'
+            'Code de vérification envoyé.'
         );
     }
 }

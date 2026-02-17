@@ -23,7 +23,8 @@ class UpdateProfileRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['sometimes', 'required', 'string', 'max:255'],
+            'first_name' => ['sometimes', 'required', 'string', 'max:100'],
+            'last_name' => ['sometimes', 'required', 'string', 'max:100'],
             'email' => [
                 'sometimes',
                 'required',
@@ -32,7 +33,14 @@ class UpdateProfileRequest extends FormRequest
                 'max:255',
                 Rule::unique('users', 'email')->ignore($this->user()->id),
             ],
-            'avatar' => ['sometimes', 'nullable', 'string', 'url', 'max:500'],
+            'phone' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'address' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
+            'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'country' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'avatar_url' => ['sometimes', 'nullable', 'string', 'url', 'max:500'],
+            'language' => ['sometimes', 'nullable', 'string', 'max:10'],
+            'timezone' => ['sometimes', 'nullable', 'string', 'max:50'],
         ];
     }
 
@@ -44,13 +52,12 @@ class UpdateProfileRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'name.required' => 'Le nom est obligatoire.',
-            'name.max' => 'Le nom ne peut pas dépasser :max caractères.',
+            'first_name.required' => 'Le prénom est obligatoire.',
+            'last_name.required' => 'Le nom est obligatoire.',
             'email.required' => 'L\'adresse email est obligatoire.',
             'email.email' => 'L\'adresse email n\'est pas valide.',
             'email.unique' => 'Cette adresse email est déjà utilisée.',
-            'avatar.url' => 'L\'avatar doit être une URL valide.',
-            'avatar.max' => 'L\'URL de l\'avatar ne peut pas dépasser :max caractères.',
+            'avatar_url.url' => 'L\'avatar doit être une URL valide.',
         ];
     }
 }

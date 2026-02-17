@@ -1,0 +1,48 @@
+<?php
+
+use Illuminate\Database\Migrations\Migration;
+use Illuminate\Database\Schema\Blueprint;
+use Illuminate\Support\Facades\Schema;
+
+return new class extends Migration
+{
+    /**
+     * Run the migrations.
+     */
+    public function up(): void
+    {
+        Schema::create('app_settings', function (Blueprint $table) {
+            $table->id();
+
+            // Setting Key
+            $table->string('key', 100)->unique();
+
+            // Value
+            $table->longText('value')->nullable();
+
+            // Type Casting
+            $table->enum('type', ['string', 'integer', 'float', 'boolean', 'json', 'array'])->default('string');
+
+            // Metadata
+            $table->text('description')->nullable();
+            $table->string('group_name', 100)->nullable();
+
+            // UI
+            $table->boolean('is_public')->default(false);
+
+            $table->timestamps();
+
+            // Indexes
+            $table->index('group_name');
+            $table->index('is_public');
+        });
+    }
+
+    /**
+     * Reverse the migrations.
+     */
+    public function down(): void
+    {
+        Schema::dropIfExists('app_settings');
+    }
+};

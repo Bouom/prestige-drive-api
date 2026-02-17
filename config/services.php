@@ -61,4 +61,31 @@ return [
         'client_base_url' => env('CLIENT_BASE_URL'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Stripe Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'stripe' => [
+        'key' => env('STRIPE_KEY'),
+        'secret' => env('STRIPE_SECRET'),
+        'webhook' => [
+            'secret' => env('STRIPE_WEBHOOK_SECRET'),
+            'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
+        ],
+        'currency' => env('LCP_CURRENCY', 'eur'),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
+    | Google Maps Configuration
+    |--------------------------------------------------------------------------
+    */
+
+    'google_maps' => [
+        'api_key' => env('GOOGLE_MAPS_API_KEY'),
+        'enabled' => env('GOOGLE_MAPS_API_KEY') !== null,
+    ],
+
 ];

@@ -3,9 +3,9 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Requests\Auth\PasswordResetRequestRequest;
-use App\Http\Requests\Auth\VerifyResetCodeRequest;
-use App\Http\Requests\Auth\ResetPasswordWithTokenRequest;
 use App\Http\Requests\Auth\ResendVerificationRequest;
+use App\Http\Requests\Auth\VerifyResetCodeRequest;
+use App\Http\Requests\ResetPasswordWithTokenRequest;
 use App\Http\Resources\VerificationTokenResource;
 use App\Mail\PasswordResetCodeMail;
 use App\Models\PasswordResetToken;
@@ -34,13 +34,13 @@ class PasswordResetController extends BaseController
         $email = $request->email;
 
         // Rate limiting - 3 requests per hour
-        $key = 'password-reset:' . $request->ip();
+        $key = 'password-reset:'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 3)) {
             $seconds = RateLimiter::availableIn($key);
 
             return $this->sendError(
-                'Too many reset attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                'Trop de tentatives de réinitialisation. Veuillez réessayer dans '.ceil($seconds / 60).' minutes.',
                 ['retry_after' => $seconds],
                 429
             );
@@ -68,7 +68,7 @@ class PasswordResetController extends BaseController
         // Send the reset code email
         Mail::to($email)->send(new PasswordResetCodeMail($code));
 
-        return $this->sendResponse([], 'Password reset code has been sent to your email.');
+        return $this->sendResponse([], 'Le code de réinitialisation a été envoyé à votre adresse e-mail.');
     }
 
     /**
@@ -86,13 +86,13 @@ class PasswordResetController extends BaseController
         $code = $request->code;
 
         // Rate limiting for verification attempts
-        $key = 'verify-reset:' . $request->ip();
+        $key = 'verify-reset:'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 5)) {
             $seconds = RateLimiter::availableIn($key);
 
             return $this->sendError(
-                'Too many verification attempts. Please try again in ' . ceil($seconds / 60) . ' minutes.',
+                'Trop de tentatives de vérification. Veuillez réessayer dans '.ceil($seconds / 60).' minutes.',
                 ['retry_after' => $seconds],
                 429
             );
@@ -103,20 +103,20 @@ class PasswordResetController extends BaseController
             ->where('token', $code)
             ->first();
 
-        if (!$resetToken) {
+        if (! $resetToken) {
             RateLimiter::hit($key, 30 * 60); // 30 minutes
 
-            return $this->sendError('Invalid reset code.', [], 400);
+            return $this->sendError('Code de réinitialisation invalide.', [], 400);
         }
 
-        if (!$resetToken->isValid()) {
+        if (! $resetToken->isValid()) {
             RateLimiter::hit($key, 30 * 60);
 
-            if (!$resetToken->expires_at->isFuture()) {
-                return $this->sendError('Reset code has expired.', [], 400);
+            if (! $resetToken->expires_at->isFuture()) {
+                return $this->sendError('Le code de réinitialisation a expiré.', [], 400);
             }
 
-            return $this->sendError('Too many failed attempts for this code.', [], 400);
+            return $this->sendError('Trop de tentatives échouées pour ce code.', [], 400);
         }
 
         // Code is valid, increment attempts
@@ -134,7 +134,7 @@ class PasswordResetController extends BaseController
 
         return $this->sendResponse(
             new VerificationTokenResource(['verification_token' => $verificationToken]),
-            'Code verified successfully.'
+            'Code vérifié avec succès.'
         );
     }
 
@@ -152,18 +152,18 @@ class PasswordResetController extends BaseController
 
         // Check if user exists
         $user = User::where('email', $email)->first();
-        if (!$user) {
-            return $this->sendError('User not found.', [], 404);
+        if (! $user) {
+            return $this->sendError('Utilisateur non trouvé.', [], 404);
         }
 
         // Rate limiting - allow resending once per minute
-        $key = 'resend-reset:' . $request->ip();
+        $key = 'resend-reset:'.$request->ip();
 
         if (RateLimiter::tooManyAttempts($key, 1)) {
             $seconds = RateLimiter::availableIn($key);
 
             return $this->sendError(
-                'Please wait ' . $seconds . ' seconds before requesting another code.',
+                'Veuillez patienter '.$seconds.' secondes avant de demander un nouveau code.',
                 ['retry_after' => $seconds],
                 429
             );
@@ -191,7 +191,7 @@ class PasswordResetController extends BaseController
         // Send the reset code email
         Mail::to($email)->send(new PasswordResetCodeMail($code));
 
-        return $this->sendResponse([], 'Password reset code has been resent to your email.');
+        return $this->sendResponse([], 'Le code de réinitialisation a été renvoyé à votre adresse e-mail.');
     }
 
     /**
@@ -212,15 +212,15 @@ class PasswordResetController extends BaseController
             ->where('verification_token', $token)
             ->first();
 
-        if (!$resetToken || !$resetToken->isValid()) {
-            return $this->sendError('Invalid or expired reset token.', [], 400);
+        if (! $resetToken || ! $resetToken->isValid()) {
+            return $this->sendError('Jeton de réinitialisation invalide ou expiré.', [], 400);
         }
 
         // Update the user's password
         $user = User::where('email', $email)->first();
 
-        if (!$user) {
-            return $this->sendError('User not found.', [], 404);
+        if (! $user) {
+            return $this->sendError('Utilisateur non trouvé.', [], 404);
         }
 
         $user->password = Hash::make($request->password);
@@ -229,6 +229,6 @@ class PasswordResetController extends BaseController
         // Delete the reset token
         $resetToken->delete();
 
-        return $this->sendResponse([], 'Password has been reset successfully.');
+        return $this->sendResponse([], 'Mot de passe réinitialisé avec succès.');
     }
 }

@@ -24,7 +24,7 @@ class LoginRequest extends FormRequest
         return [
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string', 'min:6'],
-            'device_name'=> [],
+            'remember' => ['sometimes', 'boolean'],
         ];
     }
 
@@ -43,4 +43,3 @@ class LoginRequest extends FormRequest
         ];
     }
 }
-
