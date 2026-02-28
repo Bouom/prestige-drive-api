@@ -16,7 +16,9 @@ class PaymentController extends BaseController
 {
     public function __construct()
     {
-        Stripe::setApiKey(config('services.stripe.secret'));
+        $sandbox = config('services.stripe.sandbox');
+        $apiKey = $sandbox ? config('services.stripe.secret') : config('services.stripe.secret');
+        Stripe::setApiKey($apiKey);
     }
 
     /**
