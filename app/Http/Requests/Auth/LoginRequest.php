@@ -25,6 +25,7 @@ class LoginRequest extends FormRequest
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string', 'min:6'],
             'remember' => ['sometimes', 'boolean'],
+            'guest_token' => ['sometimes', 'nullable', 'string', 'max:36'],
         ];
     }
 

@@ -33,6 +33,7 @@ class RideQuote extends Model
         'estimated_price',
         'converted_to_ride_id',
         'session_id',
+        'guest_token',
         'ip_address',
         'expires_at',
     ];
@@ -96,5 +97,13 @@ class RideQuote extends Model
     public function scopeConverted($query)
     {
         return $query->whereNotNull('converted_to_ride_id');
+    }
+
+    /**
+     * Scope to get quotes by guest token.
+     */
+    public function scopeForGuest($query, string $guestToken)
+    {
+        return $query->where('guest_token', $guestToken);
     }
 }

@@ -100,7 +100,7 @@ class RideController extends BaseController
         );
 
         $quote = RideQuote::create([
-            'user_id' => $request->user()?->id,
+            'user_id' => auth('api')->id(),
             'pickup_address' => $request->pickup_address,
             'pickup_latitude' => $request->pickup_latitude,
             'pickup_longitude' => $request->pickup_longitude,
@@ -118,6 +118,7 @@ class RideController extends BaseController
             'estimated_distance_km' => $request->estimated_distance_km,
             'estimated_duration_min' => $request->estimated_duration_min,
             'estimated_price' => $pricing['final_total'],
+            'guest_token' => $request->input('guest_token'),
             'session_id' => session()->getId(),
             'ip_address' => $request->ip(),
             'expires_at' => now()->addHours(24),
@@ -164,7 +165,7 @@ class RideController extends BaseController
         );
 
         $quote->update([
-            'user_id' => $request->user()?->id ?? $quote->user_id,
+            'user_id' => auth('api')->id() ?? $quote->user_id,
             'pickup_address' => $request->pickup_address,
             'pickup_latitude' => $request->pickup_latitude,
             'pickup_longitude' => $request->pickup_longitude,
@@ -189,6 +190,19 @@ class RideController extends BaseController
             new RideQuoteResource($quote->fresh(['tripType', 'vehicleBrand', 'vehicleModel']), $pricing),
             'Simulation mise à jour avec succès.'
         );
+    }
+
+    /**
+     * Get the authenticated user's ride quotes (simulations).
+     */
+    public function myQuotes(Request $request): AnonymousResourceCollection
+    {
+        $quotes = RideQuote::where('user_id', $request->user()->id)
+            ->with(['tripType', 'vehicleBrand', 'vehicleModel', 'convertedToRide'])
+            ->orderByDesc('created_at')
+            ->paginate(15);
+
+        return RideQuoteResource::collection($quotes);
     }
 
     /**
@@ -220,6 +234,14 @@ class RideController extends BaseController
             'status' => 'pending',
             'payment_status' => 'pending',
         ]);
+
+        // Link the quote to the newly created ride
+        if ($request->filled('quote_id')) {
+            RideQuote::where('id', $request->quote_id)
+                ->where('user_id', $request->user()->id)
+                ->whereNull('converted_to_ride_id')
+                ->update(['converted_to_ride_id' => $ride->id]);
+        }
 
         return $this->sendResponse(
             new RideResource($ride->load(['customer', 'tripType'])),

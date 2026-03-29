@@ -7,9 +7,12 @@ use Illuminate\Http\Resources\Json\JsonResource;
 
 class RideQuoteResource extends JsonResource
 {
-    public function __construct($resource, private ?array $pricing = null)
+    private ?array $pricingDetails = null;
+
+    public function __construct($resource, mixed $pricing = null)
     {
         parent::__construct($resource);
+        $this->pricingDetails = is_array($pricing) ? $pricing : null;
     }
 
     public function toArray(Request $request): array
@@ -55,7 +58,11 @@ class RideQuoteResource extends JsonResource
                 'duration_min' => $this->estimated_duration_min,
             ],
 
-            'pricing' => $this->pricing,
+            'estimated_price' => (float) $this->estimated_price,
+            'pricing' => $this->pricingDetails,
+            'converted_to_ride_id' => $this->converted_to_ride_id,
+            'is_converted' => $this->converted_to_ride_id !== null,
+            'is_expired' => $this->expires_at && $this->expires_at->isPast(),
             'expires_at' => $this->expires_at,
             'created_at' => $this->created_at,
         ];

@@ -61,6 +61,9 @@ class StoreRideRequest extends FormRequest
 
             // Confirmation
             'requires_date_confirmation' => ['sometimes', 'boolean'],
+
+            // Link to quote
+            'quote_id' => ['sometimes', 'nullable', 'integer', 'exists:ride_quotes,id'],
         ];
     }
 

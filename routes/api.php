@@ -101,6 +101,7 @@ Route::middleware('auth:api')->group(function () {
     // RIDES
     // --------------------------------------------------------------------
     Route::prefix('rides')->group(function () {
+        Route::get('/my-quotes', [RideController::class, 'myQuotes']);
         Route::get('/', [RideController::class, 'index']);
         Route::get('/{uuid}', [RideController::class, 'show']);
         Route::post('/', [RideController::class, 'store']);

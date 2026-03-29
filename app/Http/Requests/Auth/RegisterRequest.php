@@ -45,6 +45,7 @@ class RegisterRequest extends FormRequest
             'address' => ['sometimes', 'nullable', 'string', 'max:500'],
             'postal_code' => ['sometimes', 'nullable', 'string', 'max:20'],
             'city' => ['sometimes', 'nullable', 'string', 'max:100'],
+            'guest_token' => ['sometimes', 'nullable', 'string', 'max:36'],
 
             // Driver fields
             'license_type_id' => ['required_if:user_type,driver', 'nullable', 'integer', 'exists:license_types,id'],

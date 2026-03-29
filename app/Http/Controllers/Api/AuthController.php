@@ -14,6 +14,7 @@ use App\Models\Company;
 use App\Models\DocumentType;
 use App\Models\DriverProfile;
 use App\Models\EmailVerificationCode;
+use App\Models\RideQuote;
 use App\Models\User;
 use App\Models\UserType;
 use App\Services\FileStorageService;
@@ -79,6 +80,8 @@ class AuthController extends BaseController
         ]);
 
         Mail::to($user->email)->send(new VerificationCodeMail($code));
+
+        $this->claimOrphanQuotes($request->input('guest_token'), $user);
 
         return $this->sendResponse(
             new UserResource($user->load('userType')),
@@ -241,6 +244,8 @@ class AuthController extends BaseController
 
         // Clear rate limiter on successful login
         RateLimiter::clear($key);
+
+        $this->claimOrphanQuotes($request->input('guest_token'), $user);
 
         // Create Personal Access Token using Passport
         $tokenResult = $user->createToken('Personal Access Token');
@@ -421,5 +426,19 @@ class AuthController extends BaseController
         });
 
         return $this->sendResponse([], 'Déconnexion de tous les appareils réussie.');
+    }
+
+    /**
+     * Claim orphan ride quotes created by a guest.
+     */
+    private function claimOrphanQuotes(?string $guestToken, User $user): int
+    {
+        if (! $guestToken) {
+            return 0;
+        }
+
+        return RideQuote::forGuest($guestToken)
+            ->whereNull('user_id')
+            ->update(['user_id' => $user->id]);
     }
 }
