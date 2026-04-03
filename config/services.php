@@ -75,7 +75,7 @@ return [
             'tolerance' => env('STRIPE_WEBHOOK_TOLERANCE', 300),
         ],
         'currency' => env('LCP_CURRENCY', 'eur'),
-            'sandbox' => env('STRIPE_SANDBOX', false),
+        'sandbox' => env('STRIPE_SANDBOX', false),
     ],
 
     /*
