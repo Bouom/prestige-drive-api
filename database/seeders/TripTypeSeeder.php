@@ -14,41 +14,41 @@ class TripTypeSeeder extends Seeder
     {
         $tripTypes = [
             [
-                'name' => 'one_way',
-                'display_name' => 'Aller Simple',
-                'description' => 'Trajet aller simple du point A au point B',
+                'name' => 'personal',
+                'display_name' => 'Personnel',
+                'description' => 'transport de tout citoyen lambda',
                 'is_active' => true,
             ],
             [
-                'name' => 'round_trip',
-                'display_name' => 'Aller-Retour',
-                'description' => 'Trajet aller-retour avec retour au point de départ',
+                'name' => 'professional',
+                'display_name' => 'Professionnel',
+                'description' => 'Transport réservé aux société et aux particuliers',
                 'is_active' => true,
             ],
-            [
-                'name' => 'hourly',
-                'display_name' => 'À la disposition',
-                'description' => 'Mise à disposition du chauffeur pour une durée déterminée',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'airport_transfer',
-                'display_name' => 'Transfert Aéroport',
-                'description' => 'Transfert depuis/vers un aéroport',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'station_transfer',
-                'display_name' => 'Transfert Gare',
-                'description' => 'Transfert depuis/vers une gare',
-                'is_active' => true,
-            ],
-            [
-                'name' => 'long_distance',
-                'display_name' => 'Longue Distance',
-                'description' => 'Trajet de longue distance (plus de 100 km)',
-                'is_active' => true,
-            ],
+            // [
+            //     'name' => 'hourly',
+            //     'display_name' => 'À la disposition',
+            //     'description' => 'Mise à disposition du chauffeur pour une durée déterminée',
+            //     'is_active' => true,
+            // ],
+            // [
+            //     'name' => 'airport_transfer',
+            //     'display_name' => 'Transfert Aéroport',
+            //     'description' => 'Transfert depuis/vers un aéroport',
+            //     'is_active' => true,
+            // ],
+            // [
+            //     'name' => 'station_transfer',
+            //     'display_name' => 'Transfert Gare',
+            //     'description' => 'Transfert depuis/vers une gare',
+            //     'is_active' => true,
+            // ],
+            // [
+            //     'name' => 'long_distance',
+            //     'display_name' => 'Longue Distance',
+            //     'description' => 'Trajet de longue distance (plus de 100 km)',
+            //     'is_active' => true,
+            // ],
             [
                 'name' => 'event',
                 'display_name' => 'Événementiel',

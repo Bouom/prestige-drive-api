@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             PermissionSeeder::class,
             VehicleBrandAndModelSeeder::class,
             AdminUserSeeder::class,
+            PromoCodeSeeder::class,
             DemoDataSeeder::class,
             ContentSeeder::class,
             PrixSeeder::class,

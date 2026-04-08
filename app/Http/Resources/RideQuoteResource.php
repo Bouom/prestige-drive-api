@@ -58,6 +58,9 @@ class RideQuoteResource extends JsonResource
                 'duration_min' => $this->estimated_duration_min,
             ],
 
+            'discount_code' => $this->discount_code,
+            'discount_amount' => (float) $this->discount_amount,
+            'customer_type' => $this->customer_type,
             'estimated_price' => (float) $this->estimated_price,
             'pricing' => $this->pricingDetails,
             'converted_to_ride_id' => $this->converted_to_ride_id,

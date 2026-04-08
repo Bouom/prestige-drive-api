@@ -96,7 +96,8 @@ class RideController extends BaseController
             distanceKm: (float) $request->estimated_distance_km,
             isRoundTrip: $request->boolean('is_round_trip'),
             tripTypeId: $request->trip_type_id,
-            options: $request->only('discount_code'),
+            options: $request->only('discount_code', 'customer_type'),
+            user: auth('api')->user(),
         );
 
         $quote = RideQuote::create([
@@ -118,6 +119,9 @@ class RideController extends BaseController
             'estimated_distance_km' => $request->estimated_distance_km,
             'estimated_duration_min' => $request->estimated_duration_min,
             'estimated_price' => $pricing['final_total'],
+            'discount_code' => $request->discount_code,
+            'discount_amount' => $pricing['total_discounts'],
+            'customer_type' => $request->customer_type,
             'guest_token' => $request->input('guest_token'),
             'session_id' => session()->getId(),
             'ip_address' => $request->ip(),
@@ -161,7 +165,8 @@ class RideController extends BaseController
             distanceKm: (float) $request->estimated_distance_km,
             isRoundTrip: $request->boolean('is_round_trip'),
             tripTypeId: $request->trip_type_id,
-            options: $request->only('discount_code'),
+            options: $request->only('discount_code', 'customer_type'),
+            user: auth('api')->user(),
         );
 
         $quote->update([
@@ -183,6 +188,9 @@ class RideController extends BaseController
             'estimated_distance_km' => $request->estimated_distance_km,
             'estimated_duration_min' => $request->estimated_duration_min,
             'estimated_price' => $pricing['final_total'],
+            'discount_code' => $request->discount_code,
+            'discount_amount' => $pricing['total_discounts'],
+            'customer_type' => $request->customer_type,
             'expires_at' => now()->addHours(24),
         ]);
 
@@ -228,12 +236,22 @@ class RideController extends BaseController
             'is_round_trip' => $request->boolean('is_round_trip'),
             'return_scheduled_at' => $request->return_scheduled_at,
             'customer_notes' => $request->customer_notes,
+            'discount_code' => $request->discount_code,
+            'discount_amount' => $request->discount_amount ?? 0,
             'base_price' => $request->base_price,
             'total_price' => $request->total_price,
             'final_price' => $request->final_price,
             'status' => 'pending',
             'payment_status' => 'pending',
         ]);
+
+        // Increment promo code usage if discount was applied
+        if ($request->filled('discount_code') && $request->discount_amount > 0) {
+            $promoCode = \App\Models\PromoCode::where('code', strtoupper($request->discount_code))->first();
+            if ($promoCode) {
+                $promoCode->incrementUsage();
+            }
+        }
 
         // Link the quote to the newly created ride
         if ($request->filled('quote_id')) {

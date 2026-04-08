@@ -58,6 +58,8 @@ class StoreRideRequest extends FormRequest
             // Payment
             'payment_method_id' => ['sometimes', 'nullable', 'integer', 'exists:payment_methods,id'],
             'discount_code' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'discount_amount' => ['sometimes', 'nullable', 'numeric', 'min:0'],
+            'customer_type' => ['sometimes', 'nullable', 'string', 'in:company,individual'],
 
             // Confirmation
             'requires_date_confirmation' => ['sometimes', 'boolean'],

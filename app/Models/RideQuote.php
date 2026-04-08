@@ -31,6 +31,9 @@ class RideQuote extends Model
         'estimated_distance_km',
         'estimated_duration_min',
         'estimated_price',
+        'discount_code',
+        'discount_amount',
+        'customer_type',
         'converted_to_ride_id',
         'session_id',
         'guest_token',
@@ -46,6 +49,7 @@ class RideQuote extends Model
         'is_round_trip' => 'boolean',
         'estimated_distance_km' => 'decimal:2',
         'estimated_price' => 'decimal:2',
+        'discount_amount' => 'decimal:2',
         'expires_at' => 'datetime',
     ];
 

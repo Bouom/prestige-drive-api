@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\Admin\ContentManagementController;
 use App\Http\Controllers\Api\Admin\DriverVerificationController;
 use App\Http\Controllers\Api\Admin\PricingRuleController;
 use App\Http\Controllers\Api\Admin\PrixController;
+use App\Http\Controllers\Api\Admin\PromoCodeController;
 use App\Http\Controllers\Api\Admin\RetourChauffeurController;
 use App\Http\Controllers\Api\Admin\StatisticsController;
 use App\Http\Controllers\Api\Admin\SystemSettingsController;
@@ -335,6 +336,17 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/faqs', [ContentManagementController::class, 'storeFaq']);
             Route::put('/faqs/{faq}', [ContentManagementController::class, 'updateFaq']);
             Route::delete('/faqs/{faq}', [ContentManagementController::class, 'destroyFaq']);
+        });
+
+        // Promo Codes Management
+        Route::prefix('promo-codes')->group(function () {
+            Route::get('/', [PromoCodeController::class, 'index']);
+            Route::post('/', [PromoCodeController::class, 'store']);
+            Route::get('/{promoCode}', [PromoCodeController::class, 'show']);
+            Route::put('/{promoCode}', [PromoCodeController::class, 'update']);
+            Route::post('/{promoCode}/activate', [PromoCodeController::class, 'activate']);
+            Route::post('/{promoCode}/deactivate', [PromoCodeController::class, 'deactivate']);
+            Route::delete('/{promoCode}', [PromoCodeController::class, 'destroy']);
         });
     });
 });

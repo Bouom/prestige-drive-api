@@ -44,6 +44,7 @@ class QuoteRequest extends FormRequest
             'passenger_count' => ['sometimes', 'integer', 'min:1', 'max:8'],
             'is_round_trip' => ['sometimes', 'boolean'],
             'discount_code' => ['sometimes', 'nullable', 'string', 'max:50'],
+            'customer_type' => ['sometimes', 'nullable', 'string', 'in:company,individual'],
             'guest_token' => ['sometimes', 'nullable', 'string', 'max:36'],
         ];
     }
