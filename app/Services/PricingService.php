@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Models\PricingRule;
 use App\Models\PricingSnapshot;
 use App\Models\Prix;
+use App\Models\PromoCode;
 use App\Models\RetourChauffeur;
 use App\Models\Ride;
+use App\Models\User;
 
 class PricingService
 {
@@ -17,7 +19,8 @@ class PricingService
         float $distanceKm,
         bool $isRoundTrip = false,
         ?int $tripTypeId = null,
-        array $options = []
+        array $options = [],
+        ?User $user = null
     ): array {
         // Get active per-km rate from prix table (falls back to config)
         $baseRatePerKm = Prix::getActiveRate();
@@ -90,9 +93,30 @@ class PricingService
         $totalDiscounts = 0.00;
 
         // Check for discount code in options
-        if (isset($options['discount_code'])) {
-            // TODO: Implement discount code logic
-            // This would check against active discounts/promotions
+        if (isset($options['discount_code']) && !empty($options['discount_code'])) {
+            $promoCode = PromoCode::where('code', strtoupper($options['discount_code']))->first();
+            $customerType = $options['customer_type'] ?? null;
+
+            if ($promoCode && $promoCode->isApplicableTo($user, $customerType)) {
+                $discountAmount = 0.00;
+
+                if ($promoCode->discount_type === 'percentage') {
+                    $discountAmount = $subtotal * ($promoCode->discount_value / 100);
+                } else {
+                    $discountAmount = min($promoCode->discount_value, $subtotal);
+                }
+
+                $discounts[] = [
+                    'code' => $promoCode->code,
+                    'type' => $promoCode->discount_type,
+                    'value' => $promoCode->discount_value,
+                    'target_type' => $promoCode->target_type,
+                    'amount' => round($discountAmount, 2),
+                    'description' => $promoCode->description,
+                ];
+
+                $totalDiscounts = round($discountAmount, 2);
+            }
         }
 
         // Calculate platform fee
