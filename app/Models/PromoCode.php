@@ -88,9 +88,4 @@ class PromoCode extends Model
     {
         $this->increment('used_count');
     }
-
-    public function getRouteKeyName(): string
-    {
-        return 'code';
-    }
 }

@@ -344,7 +344,7 @@ Route::middleware('auth:api')->group(function () {
             Route::post('/', [PromoCodeController::class, 'store']);
             Route::get('/{promoCode}', [PromoCodeController::class, 'show']);
             Route::put('/{promoCode}', [PromoCodeController::class, 'update']);
-            Route::post('/{promoCode}/activate', action: [PromoCodeController::class, 'activate']);
+            Route::post('/{promoCode}/activate', [PromoCodeController::class, 'activate']);
             Route::post('/{promoCode}/deactivate', [PromoCodeController::class, 'deactivate']);
             Route::delete('/{promoCode}', [PromoCodeController::class, 'destroy']);
         });
