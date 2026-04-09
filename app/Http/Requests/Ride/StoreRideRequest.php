@@ -29,7 +29,7 @@ class StoreRideRequest extends FormRequest
             'dropoff_longitude' => ['required', 'numeric', 'between:-180,180'],
 
             // Timing (optional: if not set, the admin/team will confirm the schedule)
-            'scheduled_at' => ['sometimes', 'nullable', 'date', 'after:now'],
+            'scheduled_at' => ['sometimes', 'nullable', 'date'],
 
             // Distance & Duration (from route calculation)
             'estimated_distance_km' => ['required', 'numeric', 'min:0', 'max:9999.99'],
@@ -42,7 +42,7 @@ class StoreRideRequest extends FormRequest
 
             // Round Trip
             'is_round_trip' => ['sometimes', 'boolean'],
-            'return_scheduled_at' => ['required_if:is_round_trip,true', 'nullable', 'date', 'after:scheduled_at'],
+            'return_scheduled_at' => ['required_if:is_round_trip,true', 'nullable', 'date'],
 
             // Company Booking
             'company_id' => ['sometimes', 'nullable', 'integer', 'exists:companies,id'],

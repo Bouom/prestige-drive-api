@@ -17,7 +17,9 @@ class PaymentController extends BaseController
     public function __construct()
     {
         $sandbox = config('services.stripe.sandbox');
-        $apiKey = $sandbox ? config('services.stripe.secret') : config('services.stripe.secret');
+        $apiKey = $sandbox
+            ? config('services.stripe.test_secret', config('services.stripe.secret'))
+            : config('services.stripe.secret');
         Stripe::setApiKey($apiKey);
     }
 
@@ -85,9 +87,7 @@ class PaymentController extends BaseController
                     'ride_id' => $ride->id,
                     'user_id' => $request->user()->id,
                 ],
-                'automatic_payment_methods' => [
-                    'enabled' => true,
-                ],
+                'payment_method_types' => ['card'],
             ]);
 
             $payment = Payment::create([

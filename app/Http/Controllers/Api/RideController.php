@@ -45,7 +45,8 @@ class RideController extends BaseController
         }
 
         if ($request->has('status')) {
-            $query->where('status', $request->status);
+            $statuses = array_filter(array_map('trim', explode(',', $request->status)));
+            $query->whereIn('status', $statuses);
         }
 
         if ($request->has('payment_status')) {
@@ -198,7 +199,8 @@ class RideController extends BaseController
     public function myQuotes(Request $request): AnonymousResourceCollection
     {
         $quotes = RideQuote::where('user_id', $request->user()->id)
-            ->with(['tripType', 'vehicleBrand', 'vehicleModel', 'convertedToRide'])
+            ->whereNull('converted_to_ride_id')
+            ->with(['tripType', 'vehicleBrand', 'vehicleModel'])
             ->orderByDesc('created_at')
             ->paginate(15);
 

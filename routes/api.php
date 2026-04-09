@@ -155,12 +155,12 @@ Route::middleware('auth:api')->group(function () {
     // --------------------------------------------------------------------
     Route::prefix('payments')->group(function () {
         Route::get('/', [PaymentController::class, 'index']);
-        Route::get('/{uuid}', [PaymentController::class, 'show']);
+        Route::get('/history', [PaymentController::class, 'history']);
+        Route::get('/verify-checkout', [PaymentController::class, 'verifyCheckoutSession']);
         Route::post('/intent', [PaymentController::class, 'createIntent']);
         Route::post('/confirm', [PaymentController::class, 'confirm']);
-        Route::get('/history', [PaymentController::class, 'history']);
         Route::post('/checkout-session', [PaymentController::class, 'createCheckoutSession']);
-        Route::get('/verify-checkout', [PaymentController::class, 'verifyCheckoutSession']);
+        Route::get('/{uuid}', [PaymentController::class, 'show']);
     });
 
     Route::prefix('payment-methods')->group(function () {
